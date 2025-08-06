@@ -1,10 +1,12 @@
 package br.com.techtaste.mspedidos.service;
 
 import br.com.techtaste.mspedidos.dto.AutorizacaoDto;
+import br.com.techtaste.mspedidos.dto.EmailDto;
 import br.com.techtaste.mspedidos.dto.PedidoRequestDto;
 import br.com.techtaste.mspedidos.dto.PedidoResponseDto;
 import br.com.techtaste.mspedidos.model.Pedido;
 import br.com.techtaste.mspedidos.model.Status;
+import br.com.techtaste.mspedidos.producer.UsuarioProducer;
 import br.com.techtaste.mspedidos.repository.PedidoRepository;
 import br.com.techtaste.mspedidos.utils.AutorizacaoPagamentoClient;
 import org.springframework.beans.BeanUtils;
@@ -19,10 +21,12 @@ public class PedidoService {
 
     private final PedidoRepository repository;
     private final AutorizacaoPagamentoClient client;
+    private final UsuarioProducer producer;
 
-    public PedidoService(PedidoRepository repository, AutorizacaoPagamentoClient client) {
+    public PedidoService(PedidoRepository repository, AutorizacaoPagamentoClient client, UsuarioProducer producer) {
         this.repository = repository;
         this.client = client;
+        this.producer = producer;
     }
 
     private Status obterStatusPagamento(String id) {
@@ -49,6 +53,7 @@ public class PedidoService {
         }
         pedido.setStatus(status);
         repository.save(pedido);
+        producer.enviarEmail(new EmailDto(pedido.getCpf(), pedido.getId().toString(), pedido.getStatus().toString()));
         return new PedidoResponseDto(pedido.getId(), pedido.getStatus(),
                 pedido.getCpf(), pedido.getItens(), pedido.getValorTotal(),
                 pedido.getData());
